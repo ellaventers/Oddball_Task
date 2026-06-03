@@ -1,0 +1,31 @@
+#EllaVenters
+#6/3/26
+#Oddball Data Wrangling 
+
+setwd("C:/Users/emv55/OneDrive/Documents/DataForLabs")
+library(tidyverse)
+cleanData <- read.csv("clean_data(1).csv")
+View(cleanData)
+sub1873B <- read.delim("1873_BL.txt")
+View(sub1873B)
+write.csv(sub1873B, "sub1873B.csv")
+sub1873B <- read.csv("sub1873B.csv")
+View(sub1873B)
+text_lines <- readLines("1873_BL.txt")
+numbers <- str_extract_all(text_lines, "\\d+")
+df <- data.frame(Numbers = unlist(numbers))
+data1 <- write.csv(df, "numbers_only.csv", row.names = FALSE)
+View(df)
+num_only <-read.csv("numbers_only.csv")
+View(num_only)
+library(tidyverse)
+
+sub1873B.1 <- sub1873B %>%
+  extract(
+    starting.task.for.1873,
+    into = c("name", "value"),
+    regex = "(trial|pushed|score)\\s+(\\d+)"
+  ) %>%
+  mutate(value = as.numeric(value))
+View(sub1873B.1)
+ 
