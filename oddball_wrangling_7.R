@@ -1,5 +1,5 @@
 #Ella Venters
-#7/1/26
+#7/15/26
 #Oddball Data Wrangling 
 
 #set up
@@ -274,18 +274,26 @@ combined_data$snd
 class(combined_data$session)
 library(emmeans)
 
-#model 3 (interaction with random effect)
-model3 <- glmer(score ~ session * snd +(1 | ID),
-  data = combined_data,
-  family = binomial)
+#make std reference
+combined_data$snd <- relevel(as.factor(combined_data$snd), ref="std")
+combined_data$snd <- factor(
+  combined_data$snd,
+  levels = c("std", "tgt", "novel")
+)
+levels(combined_data$snd)
+
+#model 3 (interaction with random effect), revert, change for RT model
+model3 <- lmer(score ~ session * snd +(1 | ID),
+  data = combined_data)
 summary(model3)
-#Estimate Std. Error z value Pr(>|z|)    
-#(Intercept)        0.11788    0.62690   0.188  0.85085    
-#session1           3.16320    0.24341  12.995  < 2e-16 ***
-#sndnovel          -2.94716    0.16548 -17.809  < 2e-16 ***
-#sndtgt             0.08171    0.13339   0.613  0.54016    
-#session1:sndnovel -2.69047    0.33616  -8.004 1.21e-15 ***
-#session1:sndtgt   -0.84645    0.31617  -2.677  0.00742 ** 
+# Fixed effects:
+#                               Estimate Std. Error         df t value Pr(>|t|)
+# (Intercept)                  0.56479    0.07082   17.18731   7.975 3.53e-07
+# sessionFollow-up             0.18154    0.01474 4992.54533  12.319  < 2e-16
+# sndnovel                    -0.38319    0.01686 4977.01780 -22.722  < 2e-16
+# sndtgt                       0.01092    0.01686 4977.01780   0.648   0.5172
+# sessionFollow-up:sndnovel   -0.12365    0.02981 4977.01780  -4.148 3.41e-05
+# sessionFollow-up:sndtgt     -0.05527    0.02981 4977.01780  -1.854   0.0638
 
 #emmeans for model 3
 posthoc2 <- emmeans(model3,~session|snd)
@@ -300,6 +308,24 @@ contrast(posthoc2,"revpairwise")
 #snd = tgt:
 #  contrast            estimate    SE  df z.ratio p.value
 #session1 - session0    2.317 0.330 Inf   7.012 <0.0001
+
+#plot posthoc2
+posthoc2dataframe<- data.frame(posthoc2)
+View(posthoc2dataframe)
+pd <- position_dodge(width = 0.5)
+ggplot(
+  subset(posthoc2dataframe, !is.na(snd)),
+  aes(x =snd, y = emmean, ymin=asymp.LCL, ymax=asymp.UCL, color = session, group = session)
+) +
+  geom_errorbar(position=pd) +
+  geom_point(position=pd) +
+  labs(
+    title = "Mean Scaled Reaction Time by Sound Type and Session",
+    x = "Sound Type",
+    y = "Mean Scaled Reaction Time"
+  ) +
+  theme_classic()
+
 posthoc3 <- emmeans(model3,~snd|session)
 contrast(posthoc3, "revpairwise")
 #session = 0:
@@ -313,6 +339,9 @@ contrast(posthoc3, "revpairwise")
 #novel - std  -5.6376 0.312 Inf -18.067 <0.0001
 #tgt - std    -0.7647 0.287 Inf  -2.668  0.0208
 #tgt - novel   4.8729 0.368 Inf  13.236 <0.0001
+
+posthoc4 <- emmeans(model3,~session|snd)
+contrast(posthoc4, "revpairwise")
 
 install.packages("lmerTest")
 library(lmerTest)
@@ -397,4 +426,7 @@ ggplot(
     color = "Session"
   ) +
   theme_classic()
+
+#start adding RedCap demographic data
+
 
